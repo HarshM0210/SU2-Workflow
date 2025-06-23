@@ -51,7 +51,7 @@ jobs:
 
       - name: Clone and Build SU2
         run: |
-          git clone --depth 1 --branch v7.5.1 https://github.com/su2code/SU2.git
+          git clone https://github.com/su2code/SU2.git
           cd SU2
           python meson.py build \
             -Dwith-mpi=auto \
@@ -59,9 +59,8 @@ jobs:
             --prefix=/usr/local
           ninja -C build
           sudo ninja -C build install
-          sudo ldconfig
           echo "SU2_CFD path: $(which SU2_CFD)"
-          SU2_CFD --version
+          echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
 
       - name: Set up environment variables
         run: |
@@ -73,11 +72,10 @@ jobs:
           ls -la
           [ -f "exp_data.dat" ] || { echo "Error: exp_data.dat not found"; exit 1; }
           [ -f "config_sa.cfg" ] || { echo "Error: config_sa.cfg not found"; exit 1; }
-          [ -f "047.su2" ] || { echo "Error: 047.su2 not found"; exit 1; }
 
       - name: Run automation.py
         run: |
-          python automation.py
+          mpirun -np 1 python automation.py
 
       - name: Upload results
         uses: actions/upload-artifact@v4
@@ -91,4 +89,4 @@ jobs:
             *.vtu
             *.txt
             *.out
-            plots/
+            final_profile_plots/
