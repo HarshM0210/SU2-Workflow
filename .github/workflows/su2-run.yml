@@ -53,6 +53,7 @@ jobs:
         run: |
           git clone https://github.com/su2code/SU2.git
           cd SU2
+          git checkout -b develop origin/develop
           python meson.py build \
             -Dwith-mpi=disabled \
             -Denable-pywrapper=true \
@@ -61,7 +62,6 @@ jobs:
           sudo ninja -C build install
           sudo ldconfig
           echo "SU2_CFD path: $(which SU2_CFD)"
-          SU2_CFD --version
 
       - name: Set up environment variables
         run: |
