@@ -8,7 +8,7 @@ def check_dependencies():
     """Verify SU2 and required files exist."""
     print(" Checking dependencies...")
     
-    # 1. Check SU2_CFD is available
+    # Check SU2_CFD is available
     su2_cfd = shutil.which("SU2_CFD")
     if not su2_cfd:
         raise RuntimeError(
@@ -16,7 +16,7 @@ def check_dependencies():
             "Try running 'SU2_CFD --help' in terminal to verify."
         )
     
-    # 2. Modified Python version check (3.11+)
+    # Python version check (3.11+)
     if sys.version_info < (3, 11):
         raise RuntimeError(f"Requires Python 3.11+. Detected: {sys.version}")
     
@@ -37,10 +37,10 @@ def check_files(config: Path, plot_script: Path, mesh_file: Path):
             f"Missing files: {missing}\n"
             f"Current directory: {Path.cwd()}"
         )
-    print(f"Found: {config.name}, {plot_script.name}, {mesh_file.name}")
+    print(f" Found: {config.name}, {plot_script.name}, {mesh_file.name}")
 
 def run_su2_simulation(config: Path):
-    """Execute SU2_CFD with the given config file."""
+    """Execute SU2_CFD directly without MPI."""
     print("\nStarting SU2 simulation...")
     try:
         result = subprocess.run(
@@ -55,8 +55,8 @@ def run_su2_simulation(config: Path):
         print("\n=== SU2 Output (tail) ===")
         print("\n".join(result.stdout.splitlines()[-10:]))
         
-        # Verify output file was created
-        output_file = config.parent / "flow.vtu"
+        # Verify output file
+        output_file = config.parent / "vol_solution.vtu"
         if not output_file.exists():
             raise FileNotFoundError(f"Expected output file not found: {output_file}")
             
