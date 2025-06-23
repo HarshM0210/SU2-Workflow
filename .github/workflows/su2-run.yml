@@ -42,7 +42,7 @@ jobs:
             python3-pip \
             git \
             wget \
-            libgl1-mesa-glx
+            libgl1
 
       - name: Install Python dependencies
         run: |
