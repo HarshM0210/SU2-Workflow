@@ -75,7 +75,7 @@ jobs:
 
       - name: Run automation.py
         run: |
-          mpirun -np 2 python automation.py
+          mpirun -np 1 python automation.py
 
       - name: Upload results
         uses: actions/upload-artifact@v4
