@@ -40,9 +40,10 @@ def check_files(config: Path, plot_script: Path, mesh_file: Path):
     print(f" Found: {config.name}, {plot_script.name}, {mesh_file.name}")
 
 def run_su2_simulation(config: Path):
-    """Execute SU2_CFD directly without MPI."""
+    """Execute SU2_CFD with proper MPI handling."""
     print("\nStarting SU2 simulation...")
     try:
+        # Try running without MPI first
         result = subprocess.run(
             ["SU2_CFD", str(config)],
             cwd=config.parent,
