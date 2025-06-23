@@ -1,0 +1,92 @@
+name: SU2 Simulation
+
+on:
+  push:
+    paths:
+      - "**.py"
+      - "**.cfg"
+      - "**.su2"
+      - "**.dat"
+  workflow_dispatch:
+
+jobs:
+  su2-run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            build-essential \
+            cmake \
+            ninja-build \
+            libopenmpi-dev \
+            openmpi-bin \
+            swig \
+            libboost-all-dev \
+            libmetis-dev \
+            libparmetis-dev \
+            libhdf5-dev \
+            zlib1g-dev \
+            python3-dev \
+            python3-pip \
+            git \
+            wget \
+            libgl1-mesa-glx
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy matplotlib mpi4py pyvista pandas
+
+      - name: Clone and Build SU2
+        run: |
+          git clone https://github.com/su2code/SU2.git
+          cd SU2
+          python meson.py build \
+            -Dwith-mpi=enabled \
+            -Denable-pywrapper=true \
+            --prefix=/usr/local
+          ninja -C build
+          sudo ninja -C build install
+          echo "SU2_CFD path: $(which SU2_CFD)"
+          echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
+
+      - name: Set up environment variables
+        run: |
+          echo "LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+          echo "PATH=/usr/local/bin:$PATH" >> $GITHUB_ENV
+
+      - name: Verify files exist
+        run: |
+          ls -la
+          [ -f "exp_data.dat" ] || { echo "Error: exp_data.dat not found"; exit 1; }
+          [ -f "config_sa.cfg" ] || { echo "Error: config_sa.cfg not found"; exit 1; }
+
+      - name: Run automation.py
+        run: |
+          mpirun -np 2 python automation.py
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: su2-results
+          path: |
+            *.csv
+            *.dat
+            *.png
+            *.vtk
+            *.txt
+            *.out
+            final_profile_plots/
