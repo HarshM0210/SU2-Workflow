@@ -140,4 +140,4 @@ jobs:
             <p><b>Commit:</b> <a href="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}">${{ github.sha }}</a></p>
             <p>The results have been pushed to <code>HarshM0210/Results</code> in branch <code>results-${{ github.run_id }}</code>.</p>
             <p>You can view the workflow run <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">here</a>.</p>
-            ${{ contains(job.status, 'failure') && '<p style="color:red;"><b>Note:</b> The workflow completed with failures.</p>' || '' }
+            ${{ contains(job.status, 'failure') && '<p style="color:red;"><b>Note:</b> The workflow completed with failures.</p>' || '' }}
