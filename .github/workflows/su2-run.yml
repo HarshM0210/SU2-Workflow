@@ -79,11 +79,39 @@ jobs:
         run: |
           python automation.py
 
+      - name: Push results to Results repo
+        if: always()
+        run: |
+          BUILD_ID=${{ github.run_id }}
+          BRANCH_NAME=results-${BUILD_ID}
+          TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
+
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          mkdir result-tmp
+          cp -r *.csv *.png *.vtu *.dat *.out *.txt plots result-tmp || true
+
+          # Create README for the results branch
+          echo "# Results from Build ${BUILD_ID}" > result-tmp/README.md
+          echo "**Run Timestamp:** ${TIMESTAMP}" >> result-tmp/README.md
+          echo "**Source Workflow:** [${{ github.repository }}@${{ github.sha }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> result-tmp/README.md
+          echo -e "\n## Files included:" >> result-tmp/README.md
+          ls -1 result-tmp | grep -v README.md | sed 's/^/- /' >> result-tmp/README.md
+
+          cd result-tmp
+          git init
+          git checkout -b $BRANCH_NAME
+          git remote add origin https://x-access-token:${{ secrets.RESULTS_REPO_TOKEN }}@github.com/HarshM0210/Results.git
+          git add .
+          git commit -m "Add results from build $BUILD_ID - $TIMESTAMP"
+          git push origin $BRANCH_NAME
+
       - name: Upload results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: su2-results
+          name: su2-results-${{ github.run_id }}
           path: |
             *.csv
             *.dat
@@ -92,3 +120,26 @@ jobs:
             *.txt
             *.out
             plots/
+          retention-days: 7
+
+      - name: Send email notification
+        if: always()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.GMAIL_ADDRESS }}
+          password: ${{ secrets.GMAIL_APP_PASSWORD }}
+          subject: "SU2 Simulation Results - Build ${{ github.run_id }}"
+          to: harshvijayrbl@gmail.com
+          from: SU2 Automation <${{ secrets.GMAIL_ADDRESS }}>
+          content_type: text/html
+          body: |
+            <h3>SU2 Simulation Completed</h3>
+            <p><b>Status:</b> ${{ job.status }}</p>
+            <p><b>Build ID:</b> ${{ github.run_id }}</p>
+            <p><b>Timestamp:</b> ${{ steps.date.outputs.timestamp }}</p>
+            <p><b>Commit:</b> <a href="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}">${{ github.sha }}</a></p>
+            <p>The results have been pushed to <code>HarshM0210/Results</code> in branch <code>results-${{ github.run_id }}</code>.</p>
+            <p>You can view the workflow run <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">here</a>.</p>
+            ${{ contains(job.status, 'failure') && '<p style="color:red;"><b>Note:</b> The workflow completed with failures.</p>' || '' }}
