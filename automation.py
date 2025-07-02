@@ -2,7 +2,8 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-import shutil 
+import shutil
+from unittest import result 
 
 def check_dependencies():
     """Verify SU2 and required files exist."""
@@ -40,7 +41,7 @@ def check_files(config: Path, plot_script: Path, mesh_file: Path):
     print(f" Found: {config.name}, {plot_script.name}, {mesh_file.name}")
 
 def run_su2_simulation(config: Path):
-    """Execute SU2_CFD directly without MPI."""
+    """Execute SU2_CFD"""
     print("\nStarting SU2 simulation...")
     try:
         result = subprocess.run(
@@ -52,8 +53,8 @@ def run_su2_simulation(config: Path):
             timeout=3600
         )
         print("SU2 simulation succeeded.")
-        print("\n=== SU2 Output (tail) ===")
-        print("\n".join(result.stdout.splitlines()[-10:]))
+        print("\n=== SU2 Output ===")
+        print(result.stdout)
         
         # Verify output file
         output_file = config.parent / "vol_solution.vtu"
@@ -64,7 +65,9 @@ def run_su2_simulation(config: Path):
         print("SU2 timed out after 1 hour.")
         sys.exit(1)
     except subprocess.CalledProcessError as e:
-        print(f"SU2 failed (exit code {e.returncode}):")
+        print(f"SU2 failed (exit {e.returncode}). Last 20 lines:")
+        print("\n".join(e.stdout.splitlines()[-20:]))
+        print("\nError output:")
         print(e.stderr)
         sys.exit(1)
     except Exception as e:
